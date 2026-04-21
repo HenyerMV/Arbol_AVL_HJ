@@ -1,1 +1,1734 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AVL Tree Visualizer</title>
+<style>
+/* ─── FUENTES ─────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
 
+/* ─── VARIABLES DE TEMA ───────────────────────────────── */
+:root {
+  --transition: 0.3s ease;
+}
+
+[data-theme="dark"] {
+  --bg-primary:    #0a0a0f;
+  --bg-secondary:  #111118;
+  --bg-surface:    #16161f;
+  --bg-card:       #1a1a26;
+  --accent:        #7c3aed;
+  --accent-bright: #a855f7;
+  --accent-glow:   rgba(124,58,237,0.35);
+  --accent-dim:    #4c1d95;
+  --node-fill:     #6d28d9;
+  --node-stroke:   #a855f7;
+  --node-text:     #f5f3ff;
+  --edge-color:    #7c3aed;
+  --edge-dim:      #3b1f6e;
+  --text-primary:  #e9e5ff;
+  --text-secondary:#a89bc2;
+  --text-muted:    #5c5475;
+  --border:        #2d2445;
+  --border-bright: #5b21b6;
+  --btn-bg:        #1e1b2e;
+  --btn-hover:     #2d2850;
+  --btn-active:    #4c1d95;
+  --input-bg:      #12111a;
+  --canvas-bg:     #0d0d14;
+  --highlight:     #f0abfc;
+  --success:       #34d399;
+  --warning:       #fbbf24;
+  --danger:        #f87171;
+  --shadow:        0 4px 24px rgba(124,58,237,0.2);
+  --node-visiting: #a855f7;
+  --node-inserted: #34d399;
+  --node-rotate:   #fbbf24;
+}
+
+[data-theme="light"] {
+  --bg-primary:    #f8f9ff;
+  --bg-secondary:  #f0f0fb;
+  --bg-surface:    #e8e8f8;
+  --bg-card:       #ffffff;
+  --accent:        #1d4ed8;
+  --accent-bright: #2563eb;
+  --accent-glow:   rgba(29,78,216,0.2);
+  --accent-dim:    #bfdbfe;
+  --node-fill:     #2563eb;
+  --node-stroke:   #1d4ed8;
+  --node-text:     #ffffff;
+  --edge-color:    #3b82f6;
+  --edge-dim:      #bfdbfe;
+  --text-primary:  #0f172a;
+  --text-secondary:#334155;
+  --text-muted:    #94a3b8;
+  --border:        #cbd5e1;
+  --border-bright: #3b82f6;
+  --btn-bg:        #f1f5f9;
+  --btn-hover:     #dbeafe;
+  --btn-active:    #bfdbfe;
+  --input-bg:      #ffffff;
+  --canvas-bg:     #f0f4ff;
+  --highlight:     #7c3aed;
+  --success:       #059669;
+  --warning:       #d97706;
+  --danger:        #dc2626;
+  --shadow:        0 4px 24px rgba(29,78,216,0.15);
+  --node-visiting: #1d4ed8;
+  --node-inserted: #059669;
+  --node-rotate:   #d97706;
+}
+
+/* ─── RESET & BASE ────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Rajdhani', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: background var(--transition), color var(--transition);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── HEADER ──────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  width: 32px; height: 32px;
+  border: 2px solid var(--accent-bright);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-bright);
+  box-shadow: 0 0 10px var(--accent-glow);
+  transition: box-shadow var(--transition);
+}
+
+h1 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+h1 span {
+  color: var(--accent-bright);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ─── THEME TOGGLE ────────────────────────────────────── */
+.theme-toggle {
+  position: relative;
+  width: 52px; height: 26px;
+  background: var(--btn-bg);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.theme-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1), background var(--transition);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+[data-theme="light"] .theme-toggle::after {
+  transform: translateX(26px);
+  background: var(--accent);
+}
+.theme-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* ─── LAYOUT PRINCIPAL ────────────────────────────────── */
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 56px);
+}
+
+/* ─── PANEL IZQUIERDO ─────────────────────────────────── */
+.left-panel {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 16px;
+  gap: 16px;
+}
+
+.panel-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px; height: 12px;
+  background: var(--accent-bright);
+  border-radius: 2px;
+}
+
+/* ─── INPUT + BOTONES ─────────────────────────────────── */
+.input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.num-input {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.num-input:focus {
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+.num-input::placeholder { color: var(--text-muted); }
+
+.btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--btn-bg);
+  color: var(--text-primary);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), 
+              box-shadow var(--transition), transform 0.1s;
+  white-space: nowrap;
+}
+.btn:hover {
+  background: var(--btn-hover);
+  border-color: var(--accent-bright);
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent-bright);
+  color: #fff;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+.btn-primary:hover {
+  background: var(--accent-bright);
+  box-shadow: 0 0 18px var(--accent-glow);
+}
+
+.btn-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.btn-danger:hover {
+  background: rgba(248,113,113,0.1);
+}
+
+.btn-full { width: 100%; justify-content: center; display: flex; }
+
+.btn-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ─── CONTROLES DE VELOCIDAD ──────────────────────────── */
+.speed-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.speed-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 1px;
+  min-width: 36px;
+}
+input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  box-shadow: 0 0 6px var(--accent-glow);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+/* ─── CONTROLES DE REPRODUCCIÓN ──────────────────────── */
+.playback-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctrl-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--btn-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--transition), border-color var(--transition),
+              box-shadow var(--transition), transform 0.1s;
+  font-size: 13px;
+}
+.ctrl-btn:hover {
+  background: var(--btn-hover);
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+.ctrl-btn:active { transform: scale(0.93); }
+.ctrl-btn.play-btn {
+  width: 42px; height: 42px;
+  background: var(--accent);
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 14px var(--accent-glow);
+}
+.ctrl-btn.play-btn:hover { background: var(--accent-bright); }
+.ctrl-btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+/* ─── LOG DE PASOS ────────────────────────────────────── */
+.step-log {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.step-log::-webkit-scrollbar { width: 4px; }
+.step-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.log-entry {
+  padding: 2px 4px;
+  border-radius: 3px;
+  animation: fadeIn 0.3s ease;
+}
+.log-entry.active {
+  background: var(--btn-hover);
+  color: var(--accent-bright);
+}
+.log-entry.rotate { color: var(--node-rotate); }
+.log-entry.insert { color: var(--node-inserted); }
+.log-entry.search { color: var(--node-visiting); }
+.log-entry.balance { color: var(--highlight); }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; } }
+
+/* ─── CANVAS ÁREA ─────────────────────────────────────── */
+.canvas-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+#avl-canvas {
+  flex: 1;
+  display: block;
+  background: var(--canvas-bg);
+  cursor: crosshair;
+  transition: background var(--transition);
+}
+
+/* ─── STATUS BAR ──────────────────────────────────────── */
+.status-bar {
+  height: 32px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+.status-item .val {
+  font-family: 'Space Mono', monospace;
+  color: var(--text-secondary);
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 4px var(--success);
+}
+.status-dot.busy { background: var(--warning); box-shadow: 0 0 4px var(--warning); }
+
+/* ─── INDICADOR DE BALANCE ────────────────────────────── */
+.balance-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  border: 1px solid;
+}
+.balance-badge.ok     { background: rgba(52,211,153,0.1); color: var(--success); border-color: var(--success); }
+.balance-badge.warn   { background: rgba(251,191,36,0.1);  color: var(--warning); border-color: var(--warning); }
+.balance-badge.error  { background: rgba(248,113,113,0.1); color: var(--danger);  border-color: var(--danger); }
+
+/* ─── INFO PANEL (derecha) ────────────────────────────── */
+.right-panel {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  text-align: center;
+}
+.stat-value {
+  font-family: 'Space Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent-bright);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ─── LEYENDA ─────────────────────────────────────────── */
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 3px 0;
+}
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ─── TOOLTIP ─────────────────────────────────────────── */
+#tooltip {
+  position: fixed;
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: 'Space Mono', monospace;
+  color: var(--text-primary);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 100;
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+}
+#tooltip.visible { opacity: 1; }
+
+/* ─── ANIMACIÓN DE CARGA ──────────────────────────────── */
+@keyframes pulse-accent {
+  0%, 100% { box-shadow: 0 0 10px var(--accent-glow); }
+  50%       { box-shadow: 0 0 22px var(--accent-glow), 0 0 40px var(--accent-glow); }
+}
+.logo-icon { animation: pulse-accent 3s ease-in-out infinite; }
+
+/* ─── SCROLLBAR GLOBAL ────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+
+/* ─── RESPONSIVO MÍNIMO ───────────────────────────────── */
+@media (max-width: 900px) {
+  .right-panel { display: none; }
+}
+@media (max-width: 640px) {
+  .left-panel { width: 200px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header>
+  <div class="header-title">
+    <div class="logo-icon">AVL</div>
+    <h1><span>AVL</span> TREE</h1>
+  </div>
+  <div class="header-right">
+    <span class="theme-label" id="theme-label">DARK</span>
+    <div class="theme-toggle" id="theme-toggle" title="Cambiar tema"></div>
+  </div>
+</header>
+
+<!-- ═══════════════ LAYOUT ═══════════════ -->
+<div class="main-layout">
+
+  <!-- ── PANEL IZQUIERDO ── -->
+  <aside class="left-panel">
+
+    <!-- INSERTAR -->
+    <div class="panel-section">
+      <div class="section-title">Insertar</div>
+      <div class="input-row">
+        <input class="num-input" type="number" id="insert-val" placeholder="ej: 42" min="-999" max="999">
+        <button class="btn btn-primary" id="btn-insert">+ INS</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btn-insert-random" style="flex:1">Aleatorio</button>
+        <button class="btn" id="btn-insert-seq" style="flex:1">Secuencia</button>
+      </div>
+    </div>
+
+    <!-- BUSCAR / ELIMINAR -->
+    <div class="panel-section">
+      <div class="section-title">Buscar / Eliminar</div>
+      <div class="input-row">
+        <input class="num-input" type="number" id="search-val" placeholder="valor" min="-999" max="999">
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btn-search" style="flex:1">🔍 Buscar</button>
+        <button class="btn btn-danger" id="btn-delete" style="flex:1">✕ Eliminar</button>
+      </div>
+    </div>
+
+    <!-- REPRODUCCIÓN -->
+    <div class="panel-section">
+      <div class="section-title">Reproducción</div>
+      <div class="playback-controls" style="margin-bottom:12px">
+        <button class="ctrl-btn" id="btn-undo"  title="Deshacer paso">↩</button>
+        <button class="ctrl-btn" id="btn-step-back" title="Paso anterior">⏮</button>
+        <button class="ctrl-btn play-btn" id="btn-play" title="Play / Pause">▶</button>
+        <button class="ctrl-btn" id="btn-step-fwd"  title="Paso siguiente">⏭</button>
+        <button class="ctrl-btn" id="btn-stop" title="Reiniciar animación">⏹</button>
+      </div>
+      <div class="speed-row">
+        <span class="speed-label">VEL</span>
+        <input type="range" id="speed-slider" min="1" max="10" value="5">
+        <span class="speed-label" id="speed-val">5</span>
+      </div>
+    </div>
+
+    <!-- ÁRBOL -->
+    <div class="panel-section">
+      <div class="section-title">Árbol</div>
+      <div class="btn-row" style="flex-direction:column;gap:6px">
+        <button class="btn btn-full" id="btn-clear">🗑 Limpiar árbol</button>
+        <button class="btn btn-full" id="btn-balance-check">⚖ Verificar balance</button>
+        <button class="btn btn-full" id="btn-recenter">⊙ Centrar vista</button>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="panel-section" style="flex:1;min-height:100px">
+      <div class="section-title">Log de pasos</div>
+      <div class="step-log" id="step-log">
+        <div class="log-entry">Sistema listo. Inserta un valor para comenzar.</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── CANVAS CENTRAL ── -->
+  <main class="canvas-area">
+    <canvas id="avl-canvas"></canvas>
+    <div class="status-bar">
+      <div class="status-item"><div class="status-dot" id="status-dot"></div><span id="status-text">Listo</span></div>
+      <div class="status-item">NODOS: <span class="val" id="stat-nodes">0</span></div>
+      <div class="status-item">ALTURA: <span class="val" id="stat-height">—</span></div>
+      <div class="status-item">PASO: <span class="val" id="stat-step">0/0</span></div>
+      <div class="status-item" id="balance-status"></div>
+    </div>
+  </main>
+
+  <!-- ── PANEL DERECHO ── -->
+  <aside class="right-panel">
+    <div class="section-title">Estadísticas</div>
+    <div class="stat-card"><div class="stat-value" id="rp-nodes">0</div><div class="stat-label">Nodos</div></div>
+    <div class="stat-card"><div class="stat-value" id="rp-height">0</div><div class="stat-label">Altura</div></div>
+    <div class="stat-card"><div class="stat-value" id="rp-rotations">0</div><div class="stat-label">Rotaciones</div></div>
+    <div class="stat-card"><div class="stat-value" id="rp-ops">0</div><div class="stat-label">Operaciones</div></div>
+
+    <div class="section-title" style="margin-top:8px">Leyenda</div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--node-fill)"></div>Normal
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--node-visiting)"></div>Visitando
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--node-inserted)"></div>Insertado
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--node-rotate)"></div>Rotando
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--danger)"></div>Desbalanceado
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:8px">Recorridos</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <button class="btn btn-full" id="btn-inorder">InOrden</button>
+      <button class="btn btn-full" id="btn-preorder">PreOrden</button>
+      <button class="btn btn-full" id="btn-postorder">PostOrden</button>
+    </div>
+  </aside>
+
+</div>
+
+<!-- TOOLTIP -->
+<div id="tooltip"></div>
+
+<!-- ═══════════════ JAVASCRIPT ═══════════════ -->
+<script>
+'use strict';
+
+/* ─────────────────────────────────────────────────
+   MÓDULO: THEME MANAGER
+───────────────────────────────────────────────── */
+const ThemeManager = (() => {
+  const toggle = document.getElementById('theme-toggle');
+  const label  = document.getElementById('theme-label');
+  const html   = document.documentElement;
+
+  function set(theme) {
+    html.setAttribute('data-theme', theme);
+    label.textContent = theme === 'dark' ? 'DARK' : 'LIGHT';
+    localStorage.setItem('avl-theme', theme);
+    if (window.AVLCanvas) window.AVLCanvas.redraw();
+  }
+
+  function init() {
+    const saved = localStorage.getItem('avl-theme') || 'dark';
+    set(saved);
+    toggle.addEventListener('click', () => {
+      set(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+  }
+
+  function getVar(name) {
+    return getComputedStyle(html).getPropertyValue(name).trim();
+  }
+
+  return { init, getVar };
+})();
+
+/* ─────────────────────────────────────────────────
+   MÓDULO: LOGGER
+───────────────────────────────────────────────── */
+const Logger = (() => {
+  const log = document.getElementById('step-log');
+  let entries = [];
+
+  function add(msg, type = '') {
+    entries.push({ msg, type });
+    const div = document.createElement('div');
+    div.className = 'log-entry ' + type;
+    div.textContent = `[${entries.length.toString().padStart(3,'0')}] ${msg}`;
+    log.appendChild(div);
+    // Marcar activo
+    log.querySelectorAll('.log-entry.active').forEach(e => e.classList.remove('active'));
+    div.classList.add('active');
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function clear() {
+    entries = [];
+    log.innerHTML = '<div class="log-entry">Sistema listo.</div>';
+  }
+
+  return { add, clear };
+})();
+
+/* ─────────────────────────────────────────────────
+   MÓDULO: STATS MANAGER
+───────────────────────────────────────────────── */
+const Stats = (() => {
+  let nodes = 0, height = 0, rotations = 0, ops = 0;
+
+  function update(n, h, r, o) {
+    if (n !== undefined) nodes = n;
+    if (h !== undefined) height = h;
+    if (r !== undefined) rotations += r;
+    if (o !== undefined) ops += o;
+    render();
+  }
+
+  function render() {
+    document.getElementById('stat-nodes').textContent = nodes;
+    document.getElementById('stat-height').textContent = height || '—';
+    document.getElementById('rp-nodes').textContent = nodes;
+    document.getElementById('rp-height').textContent = height || 0;
+    document.getElementById('rp-rotations').textContent = rotations;
+    document.getElementById('rp-ops').textContent = ops;
+  }
+
+  function reset() { nodes=0; height=0; rotations=0; ops=0; render(); }
+
+  function stepLabel(current, total) {
+    document.getElementById('stat-step').textContent = `${current}/${total}`;
+  }
+
+  return { update, reset, stepLabel };
+})();
+
+/* ─────────────────────────────────────────────────
+   MÓDULO: STATUS BAR
+───────────────────────────────────────────────── */
+const Status = (() => {
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  const bal  = document.getElementById('balance-status');
+
+  function set(msg, busy = false) {
+    text.textContent = msg;
+    dot.className = 'status-dot' + (busy ? ' busy' : '');
+  }
+
+  function setBalance(balanced) {
+    if (balanced === null) { bal.innerHTML = ''; return; }
+    const cls = balanced ? 'ok' : 'error';
+    const lbl = balanced ? 'BALANCEADO' : 'DESBALANCEADO';
+    bal.innerHTML = `<span class="balance-badge ${cls}">${lbl}</span>`;
+  }
+
+  return { set, setBalance };
+})();
+
+/* ─────────────────────────────────────────────────
+   MÓDULO: AVL TREE (LÓGICA COMPLETA)
+   Nodo: { val, left, right, height, parent? }
+   Factor de balance = altura(izq) - altura(der)
+   Rango válido: [-1, 0, 1]
+───────────────────────────────────────────────── */
+const AVLTree = (() => {
+
+  let root = null;
+
+  /* ── Utilidades de altura ── */
+  function h(node) {
+    return node ? node.height : 0;
+  }
+
+  function updateHeight(node) {
+    if (node) node.height = 1 + Math.max(h(node.left), h(node.right));
+  }
+
+  /* ── Factor de balance ── */
+  function bf(node) {
+    return node ? h(node.left) - h(node.right) : 0;
+  }
+
+  /* ── Rotación derecha (Simple Derecha) ──
+       y                x
+      / \              / \
+     x   T3    →     T1   y
+    / \                  / \
+   T1  T2              T2  T3
+  */
+  function rotateRight(y) {
+    const x  = y.left;
+    const T2 = x.right;
+    x.right = y;
+    y.left  = T2;
+    updateHeight(y);
+    updateHeight(x);
+    return x; // nueva raíz
+  }
+
+  /* ── Rotación izquierda (Simple Izquierda) ──
+     x                    y
+    / \                  / \
+   T1   y      →        x   T3
+       / \             / \
+      T2  T3          T1  T2
+  */
+  function rotateLeft(x) {
+    const y  = x.right;
+    const T2 = y.left;
+    y.left  = x;
+    x.right = T2;
+    updateHeight(x);
+    updateHeight(y);
+    return y; // nueva raíz
+  }
+
+  /* ── Balance de un nodo ── */
+  function balance(node, steps) {
+    updateHeight(node);
+    const factor = bf(node);
+
+    // Caso LL: rotación simple derecha
+    if (factor > 1 && bf(node.left) >= 0) {
+      steps.push({ type:'rotate', msg:`Rotación SIMPLE DERECHA en nodo ${node.val} (BF=${factor})`, node: node.val });
+      return rotateRight(node);
+    }
+
+    // Caso LR: rotación doble (izq-der)
+    if (factor > 1 && bf(node.left) < 0) {
+      steps.push({ type:'rotate', msg:`Rotación DOBLE LR en nodo ${node.val} (BF=${factor}): izq en ${node.left.val}, luego der en ${node.val}`, node: node.val });
+      node.left = rotateLeft(node.left);
+      return rotateRight(node);
+    }
+
+    // Caso RR: rotación simple izquierda
+    if (factor < -1 && bf(node.right) <= 0) {
+      steps.push({ type:'rotate', msg:`Rotación SIMPLE IZQUIERDA en nodo ${node.val} (BF=${factor})`, node: node.val });
+      return rotateLeft(node);
+    }
+
+    // Caso RL: rotación doble (der-izq)
+    if (factor < -1 && bf(node.right) > 0) {
+      steps.push({ type:'rotate', msg:`Rotación DOBLE RL en nodo ${node.val} (BF=${factor}): der en ${node.right.val}, luego izq en ${node.val}`, node: node.val });
+      node.right = rotateRight(node.right);
+      return rotateLeft(node);
+    }
+
+    return node; // ya balanceado
+  }
+
+  /* ── INSERTAR ── */
+  function insertNode(node, val, steps) {
+    if (!node) {
+      steps.push({ type:'insert', msg:`Insertando ${val} aquí`, node: val });
+      return { val, left: null, right: null, height: 1 };
+    }
+
+    steps.push({ type:'visit', msg:`Visitando nodo ${node.val} → ir a ${val < node.val ? 'izquierda' : 'derecha'}`, node: node.val });
+
+    if      (val < node.val) node.left  = insertNode(node.left,  val, steps);
+    else if (val > node.val) node.right = insertNode(node.right, val, steps);
+    else {
+      steps.push({ type:'info', msg:`Valor ${val} ya existe en el árbol.`, node: val });
+      return node;
+    }
+
+    steps.push({ type:'balance', msg:`Verificando BF en ${node.val}: BF=${bf(node)} → ${Math.abs(bf(node)) <= 1 ? 'OK' : '¡DESBALANCEADO!'}`, node: node.val });
+    return balance(node, steps);
+  }
+
+  function insert(val) {
+    const steps = [];
+    steps.push({ type:'insert', msg:`Iniciando inserción de ${val}`, node: null });
+    root = insertNode(root, val, steps);
+    return steps;
+  }
+
+  /* ── ENCONTRAR MÍNIMO (para eliminación) ── */
+  function minNode(node) {
+    let cur = node;
+    while (cur.left) cur = cur.left;
+    return cur;
+  }
+
+  /* ── ELIMINAR ── */
+  function deleteNode(node, val, steps) {
+    if (!node) {
+      steps.push({ type:'info', msg:`Valor ${val} no encontrado.`, node: null });
+      return null;
+    }
+
+    steps.push({ type:'visit', msg:`Buscando ${val} en nodo ${node.val}`, node: node.val });
+
+    if (val < node.val) {
+      node.left = deleteNode(node.left, val, steps);
+    } else if (val > node.val) {
+      node.right = deleteNode(node.right, val, steps);
+    } else {
+      // Nodo encontrado
+      steps.push({ type:'insert', msg:`Eliminando nodo ${node.val}`, node: node.val });
+
+      if (!node.left || !node.right) {
+        // Un hijo o ninguno
+        const tmp = node.left || node.right;
+        if (!tmp) {
+          node = null;
+        } else {
+          node = tmp;
+        }
+      } else {
+        // Dos hijos: reemplazar con sucesor inorden
+        const successor = minNode(node.right);
+        steps.push({ type:'balance', msg:`Reemplazando con sucesor inorden: ${successor.val}`, node: successor.val });
+        node.val   = successor.val;
+        node.right = deleteNode(node.right, successor.val, steps);
+      }
+    }
+
+    if (!node) return null;
+    steps.push({ type:'balance', msg:`Rebalanceando desde ${node.val} BF=${bf(node)}`, node: node.val });
+    return balance(node, steps);
+  }
+
+  function remove(val) {
+    const steps = [];
+    steps.push({ type:'insert', msg:`Iniciando eliminación de ${val}`, node: null });
+    root = deleteNode(root, val, steps);
+    return steps;
+  }
+
+  /* ── BUSCAR ── */
+  function searchNode(node, val, steps) {
+    if (!node) {
+      steps.push({ type:'info', msg:`${val} no encontrado.`, node: null });
+      return false;
+    }
+    steps.push({ type:'search', msg:`Comparando con ${node.val} → ${val === node.val ? '¡ENCONTRADO!' : val < node.val ? 'ir izquierda' : 'ir derecha'}`, node: node.val });
+    if (val === node.val) return true;
+    if (val < node.val)  return searchNode(node.left,  val, steps);
+    return searchNode(node.right, val, steps);
+  }
+
+  function search(val) {
+    const steps = [];
+    steps.push({ type:'search', msg:`Buscando ${val}…`, node: null });
+    const found = searchNode(root, val, steps);
+    steps.push({ type: found ? 'insert' : 'info', msg: found ? `¡Valor ${val} encontrado!` : `Valor ${val} no existe.`, node: val });
+    return steps;
+  }
+
+  /* ── RECORRIDOS ── */
+  function inorder(node = root, arr = []) {
+    if (!node) return arr;
+    inorder(node.left, arr);
+    arr.push(node.val);
+    inorder(node.right, arr);
+    return arr;
+  }
+
+  function preorder(node = root, arr = []) {
+    if (!node) return arr;
+    arr.push(node.val);
+    preorder(node.left, arr);
+    preorder(node.right, arr);
+    return arr;
+  }
+
+  function postorder(node = root, arr = []) {
+    if (!node) return arr;
+    postorder(node.left, arr);
+    postorder(node.right, arr);
+    arr.push(node.val);
+    return arr;
+  }
+
+  /* ── UTILIDADES PÚBLICAS ── */
+  function getRoot()   { return root; }
+  function clear()     { root = null; }
+  function treeHeight(node = root) {
+    if (!node) return 0;
+    return 1 + Math.max(treeHeight(node.left), treeHeight(node.right));
+  }
+  function nodeCount(node = root) {
+    if (!node) return 0;
+    return 1 + nodeCount(node.left) + nodeCount(node.right);
+  }
+  function isBalanced(node = root) {
+    if (!node) return true;
+    return Math.abs(bf(node)) <= 1 && isBalanced(node.left) && isBalanced(node.right);
+  }
+  function getBF(val) {
+    function find(n, v) {
+      if (!n) return null;
+      if (n.val === v) return bf(n);
+      if (v < n.val) return find(n.left, v);
+      return find(n.right, v);
+    }
+    return find(root, val);
+  }
+
+  return { insert, remove, search, getRoot, clear,
+           treeHeight, nodeCount, isBalanced, getBF,
+           inorder, preorder, postorder };
+})();
+
+/* ─────────────────────────────────────────────────
+   MÓDULO: ANIMATION ENGINE
+   Maneja una cola de pasos y los ejecuta con delay
+───────────────────────────────────────────────── */
+const AnimEngine = (() => {
+  let queue      = [];   // pasos pendientes
+  let history    = [];   // pasos ejecutados (para undo)
+  let current    = 0;
+  let playing    = false;
+  let timer      = null;
+  let speed      = 5;    // 1-10
+  let highlights = {};   // nodeVal → state
+
+  const SPEEDS = [1200,900,700,500,380,270,180,110,60,25];
+
+  function delay() { return SPEEDS[speed - 1]; }
+
+  function setSpeed(s) { speed = s; }
+
+  function clearHighlights() { highlights = {}; }
+
+  function highlight(nodeVal, state) {
+    if (nodeVal !== null) highlights[nodeVal] = state;
+  }
+
+  function getHighlights() { return highlights; }
+
+  function load(steps) {
+    stop();
+    queue   = [...steps];
+    history = [];
+    current = 0;
+    clearHighlights();
+    Stats.stepLabel(0, queue.length);
+  }
+
+  function executeStep(step) {
+    if (!step) return;
+    history.push({ step, snapshotHighlights: { ...highlights } });
+
+    // Limpiar highlights anteriores excepto inserted
+    Object.keys(highlights).forEach(k => {
+      if (highlights[k] === 'visiting') delete highlights[k];
+    });
+
+    if      (step.type === 'visit')   highlight(step.node, 'visiting');
+    else if (step.type === 'insert')  highlight(step.node, 'inserted');
+    else if (step.type === 'rotate')  highlight(step.node, 'rotate');
+    else if (step.type === 'balance') highlight(step.node, 'balance');
+    else if (step.type === 'search')  highlight(step.node, 'visiting');
+
+    const logType = step.type === 'rotate'  ? 'rotate'  :
+                    step.type === 'insert'  ? 'insert'  :
+                    step.type === 'search'  ? 'search'  :
+                    step.type === 'balance' ? 'balance' : '';
+    Logger.add(step.msg, logType);
+
+    if (window.AVLCanvas) window.AVLCanvas.redraw();
+    Stats.stepLabel(current, queue.length);
+  }
+
+  function stepForward() {
+    if (current >= queue.length) { playing = false; updateUI(); return; }
+    executeStep(queue[current++]);
+    updateUI();
+  }
+
+  function stepBack() {
+    if (history.length === 0) return;
+    const prev = history.pop();
+    current--;
+    highlights = { ...prev.snapshotHighlights };
+    if (window.AVLCanvas) window.AVLCanvas.redraw();
+    Stats.stepLabel(current, queue.length);
+    updateUI();
+  }
+
+  function play() {
+    if (current >= queue.length) { current = 0; clearHighlights(); }
+    playing = true;
+    updateUI();
+    Status.set('Reproduciendo…', true);
+    function tick() {
+      if (!playing || current >= queue.length) {
+        playing = false;
+        updateUI();
+        Status.set('Listo');
+        return;
+      }
+      stepForward();
+      timer = setTimeout(tick, delay());
+    }
+    tick();
+  }
+
+  function pause() {
+    playing = false;
+    clearTimeout(timer);
+    updateUI();
+    Status.set('Pausado');
+  }
+
+  function stop() {
+    playing = false;
+    clearTimeout(timer);
+    current = 0;
+    queue   = [];
+    history = [];
+    clearHighlights();
+    updateUI();
+    Stats.stepLabel(0, 0);
+  }
+
+  function undo() {
+    pause();
+    stepBack();
+  }
+
+  function isPlaying() { return playing; }
+
+  function updateUI() {
+    const playBtn = document.getElementById('btn-play');
+    playBtn.textContent = playing ? '⏸' : '▶';
+    playBtn.title = playing ? 'Pausar' : 'Reproducir';
+  }
+
+  return { load, play, pause, stop, stepForward, stepBack, undo,
+           setSpeed, getHighlights, clearHighlights, isPlaying };
+})();
+
+/* CONTINUA EN PARTE 2 → AVLCanvas + controles de UI */
+</script>
+
+<!-- PARTE 2 SE PEGA AQUÍ — ver instrucciones abajo -->
+<script>
+'use strict';
+
+/* ─────────────────────────────────────────────────
+   MÓDULO: AVL CANVAS RENDERER
+   Dibuja el árbol en el <canvas> con:
+   - Nodos circulares con valor y BF
+   - Aristas con flechas
+   - Colores por estado (normal, visiting, inserted, rotate, balance)
+   - Pan con drag del mouse
+   - Zoom con rueda del mouse
+   - Tooltip al hacer hover sobre un nodo
+───────────────────────────────────────────────── */
+const AVLCanvas = (() => {
+
+  const canvas  = document.getElementById('avl-canvas');
+  const ctx     = canvas.getContext('2d');
+  const tooltip = document.getElementById('tooltip');
+
+  const NODE_R   = 24;   // radio base del nodo
+  const V_GAP    = 70;   // separación vertical entre niveles
+  const MIN_H_GAP = 18;  // separación horizontal mínima entre nodos
+
+  // Transformación (pan + zoom)
+  let offsetX = 0, offsetY = 0;
+  let scale   = 1;
+
+  // Posiciones calculadas de los nodos (nodeVal → {x,y})
+  let nodePositions = {};
+
+  // Estado del drag
+  let dragging = false, dragStartX = 0, dragStartY = 0, dragOX = 0, dragOY = 0;
+
+  /* ── Resize automático del canvas ── */
+  function resize() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width  = rect.width;
+    canvas.height = rect.height - 32; // descontar status bar
+    redraw();
+  }
+
+  /* ── Obtener colores del tema actual ── */
+  function color(varName) {
+    return ThemeManager.getVar(varName);
+  }
+
+  /* ── Calcular posiciones de todos los nodos ──
+     Asigna posición x,y a cada nodo usando
+     in-order traversal + separación mínima garantizada.
+  ── */
+  function calcPositions(node, depth, positions, counter) {
+    if (!node) return;
+    calcPositions(node.left,  depth + 1, positions, counter);
+    counter.idx++;
+    const x = counter.idx * (NODE_R * 2 + MIN_H_GAP);
+    const y = depth * V_GAP + NODE_R + 20;
+    positions[node.val] = { x, y, node };
+    calcPositions(node.right, depth + 1, positions, counter);
+  }
+
+  function buildPositions() {
+    const root = AVLTree.getRoot();
+    nodePositions = {};
+    if (!root) return;
+    const counter = { idx: -1 };
+    calcPositions(root, 0, nodePositions, counter);
+
+    // Centrar horizontalmente en el canvas
+    const xs = Object.values(nodePositions).map(p => p.x);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const treeW = maxX - minX;
+    const shiftX = (canvas.width / scale) / 2 - treeW / 2 - minX;
+    Object.values(nodePositions).forEach(p => { p.x += shiftX; });
+  }
+
+  /* ── Dibujar arista ── */
+  function drawEdge(parentPos, childPos) {
+    const dx = childPos.x - parentPos.x;
+    const dy = childPos.y - parentPos.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const nx = dx / dist, ny = dy / dist;
+
+    const startX = parentPos.x + nx * NODE_R;
+    const startY = parentPos.y + ny * NODE_R;
+    const endX   = childPos.x  - nx * NODE_R;
+    const endY   = childPos.y  - ny * NODE_R;
+
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.strokeStyle = color('--edge-color');
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.55;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Pequeña flecha al final
+    const angle = Math.atan2(ny, nx);
+    const arrowLen = 8;
+    ctx.beginPath();
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(endX - arrowLen * Math.cos(angle - 0.4), endY - arrowLen * Math.sin(angle - 0.4));
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(endX - arrowLen * Math.cos(angle + 0.4), endY - arrowLen * Math.sin(angle + 0.4));
+    ctx.strokeStyle = color('--edge-color');
+    ctx.lineWidth = 1.2;
+    ctx.globalAlpha = 0.7;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  /* ── Dibujar nodo ── */
+  function drawNode(pos, highlights) {
+    const nodeVal  = pos.node.val;
+    const state    = highlights[nodeVal] || 'normal';
+    const bf       = AVLTree.getBF(nodeVal);
+
+    // Seleccionar colores por estado
+    let fillColor, strokeColor, glowColor, textColor;
+
+    if (state === 'visiting') {
+      fillColor   = color('--node-visiting');
+      strokeColor = color('--highlight');
+      glowColor   = color('--accent-glow');
+      textColor   = '#fff';
+    } else if (state === 'inserted') {
+      fillColor   = color('--node-inserted');
+      strokeColor = '#86efac';
+      glowColor   = 'rgba(52,211,153,0.4)';
+      textColor   = '#fff';
+    } else if (state === 'rotate') {
+      fillColor   = color('--node-rotate');
+      strokeColor = '#fcd34d';
+      glowColor   = 'rgba(251,191,36,0.5)';
+      textColor   = '#000';
+    } else if (state === 'balance') {
+      fillColor   = color('--danger');
+      strokeColor = '#fca5a5';
+      glowColor   = 'rgba(248,113,113,0.4)';
+      textColor   = '#fff';
+    } else {
+      fillColor   = color('--node-fill');
+      strokeColor = color('--node-stroke');
+      glowColor   = color('--accent-glow');
+      textColor   = color('--node-text');
+    }
+
+    const r = NODE_R;
+
+    // Glow
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur  = state !== 'normal' ? 16 : 8;
+
+    // Círculo relleno
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+
+    // Borde
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth   = state !== 'normal' ? 2.5 : 1.5;
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    // Valor del nodo (centro)
+    ctx.fillStyle  = textColor;
+    ctx.font       = `bold ${nodeVal.toString().length > 3 ? 11 : 13}px 'Space Mono', monospace`;
+    ctx.textAlign  = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(nodeVal.toString(), pos.x, pos.y);
+
+    // Factor de balance (pequeño, arriba-derecha del nodo)
+    if (bf !== null && bf !== undefined) {
+      const bfColor = Math.abs(bf) === 0 ? '#86efac'
+                    : Math.abs(bf) === 1 ? color('--warning')
+                    : color('--danger');
+      ctx.fillStyle  = bfColor;
+      ctx.font       = '9px Space Mono, monospace';
+      ctx.textAlign  = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(bf >= 0 ? '+' + bf : bf.toString(), pos.x + r - 6, pos.y - r + 6);
+    }
+  }
+
+  /* ── Dibujar árbol recursivamente ── */
+  function drawTree(node, highlights) {
+    if (!node) return;
+
+    const pos = nodePositions[node.val];
+    if (!pos) return;
+
+    // Aristas hijos
+    if (node.left) {
+      const lpos = nodePositions[node.left.val];
+      if (lpos) drawEdge(pos, lpos);
+      drawTree(node.left, highlights);
+    }
+    if (node.right) {
+      const rpos = nodePositions[node.right.val];
+      if (rpos) drawEdge(pos, rpos);
+      drawTree(node.right, highlights);
+    }
+
+    // Nodo encima de las aristas
+    drawNode(pos, highlights);
+  }
+
+  /* ── Dibujar cuadrícula de fondo ── */
+  function drawGrid() {
+    const gridSize = 40 * scale;
+    const w = canvas.width, h = canvas.height;
+    const offX = ((offsetX % gridSize) + gridSize) % gridSize;
+    const offY = ((offsetY % gridSize) + gridSize) % gridSize;
+
+    ctx.strokeStyle = color('--border');
+    ctx.lineWidth   = 0.3;
+    ctx.globalAlpha = 0.4;
+
+    for (let x = offX; x < w; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = offY; y < h; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* ── Dibujar mensaje vacío ── */
+  function drawEmpty() {
+    ctx.fillStyle   = color('--text-muted');
+    ctx.font        = '14px Rajdhani, sans-serif';
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Inserta un valor para construir el árbol', canvas.width/2, canvas.height/2 - 16);
+    ctx.font = '11px Space Mono, monospace';
+    ctx.fillStyle = color('--accent-bright');
+    ctx.globalAlpha = 0.5;
+    ctx.fillText('AVL Tree Visualizer', canvas.width/2, canvas.height/2 + 12);
+    ctx.globalAlpha = 1;
+  }
+
+  /* ── REDRAW PRINCIPAL ── */
+  function redraw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Fondo
+    ctx.fillStyle = color('--canvas-bg');
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    drawGrid();
+
+    const root = AVLTree.getRoot();
+    if (!root) { drawEmpty(); return; }
+
+    buildPositions();
+
+    // Aplicar transformación
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+
+    drawTree(root, AnimEngine.getHighlights());
+
+    ctx.restore();
+  }
+
+  /* ── Centrar vista ── */
+  function center() {
+    const root = AVLTree.getRoot();
+    if (!root) { offsetX = 0; offsetY = 0; scale = 1; redraw(); return; }
+    buildPositions();
+    const ys  = Object.values(nodePositions).map(p => p.y);
+    const minY = Math.min(...ys);
+    offsetY = 30 - minY * scale;
+    offsetX = 0;
+    redraw();
+  }
+
+  /* ── Tooltip ── */
+  function getNodeAt(mx, my) {
+    // Convertir coordenadas de canvas a coordenadas del árbol
+    const tx = (mx - offsetX) / scale;
+    const ty = (my - offsetY) / scale;
+    for (const [val, pos] of Object.entries(nodePositions)) {
+      const dx = tx - pos.x, dy = ty - pos.y;
+      if (Math.sqrt(dx*dx + dy*dy) <= NODE_R) return parseInt(val);
+    }
+    return null;
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    if (dragging) {
+      offsetX = dragOX + (e.clientX - dragStartX);
+      offsetY = dragOY + (e.clientY - dragStartY);
+      redraw();
+      return;
+    }
+
+    const nodeVal = getNodeAt(mx, my);
+    if (nodeVal !== null) {
+      const bf = AVLTree.getBF(nodeVal);
+      tooltip.textContent = `val: ${nodeVal}  |  BF: ${bf}`;
+      tooltip.style.left = (e.clientX + 12) + 'px';
+      tooltip.style.top  = (e.clientY - 28) + 'px';
+      tooltip.classList.add('visible');
+      canvas.style.cursor = 'pointer';
+    } else {
+      tooltip.classList.remove('visible');
+      canvas.style.cursor = dragging ? 'grabbing' : 'crosshair';
+    }
+  });
+
+  canvas.addEventListener('mousedown', (e) => {
+    dragging   = true;
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    dragOX     = offsetX;   dragOY     = offsetY;
+    canvas.style.cursor = 'grabbing';
+  });
+
+  canvas.addEventListener('mouseup',   () => { dragging = false; canvas.style.cursor = 'crosshair'; });
+  canvas.addEventListener('mouseleave',() => { dragging = false; tooltip.classList.remove('visible'); });
+
+  // Zoom rueda
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.08 : 0.93;
+    const newScale = Math.max(0.3, Math.min(3, scale * factor));
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    offsetX = mx - (mx - offsetX) * (newScale / scale);
+    offsetY = my - (my - offsetY) * (newScale / scale);
+    scale = newScale;
+    redraw();
+  }, { passive: false });
+
+  window.addEventListener('resize', resize);
+
+  // Init
+  resize();
+
+  return { redraw, center, resize };
+})();
+
+// Exponer globalmente para que AnimEngine lo use
+window.AVLCanvas = AVLCanvas;
+
+/* ─────────────────────────────────────────────────
+   MÓDULO: UI CONTROLLER
+   Conecta botones, inputs y eventos con AVLTree + AnimEngine
+───────────────────────────────────────────────── */
+const UIController = (() => {
+
+  let totalRotations = 0;
+  let totalOps = 0;
+
+  function refreshStats() {
+    const n = AVLTree.nodeCount();
+    const h = AVLTree.treeHeight();
+    const balanced = n > 0 ? AVLTree.isBalanced() : null;
+    Stats.update(n, h);
+    Status.setBalance(balanced);
+  }
+
+  function runOperation(steps, opName) {
+    // Contar rotaciones en los pasos
+    const rots = steps.filter(s => s.type === 'rotate').length;
+    totalRotations += rots;
+    totalOps++;
+    Stats.update(AVLTree.nodeCount(), AVLTree.treeHeight(), undefined, undefined);
+    document.getElementById('rp-rotations').textContent = totalRotations;
+    document.getElementById('rp-ops').textContent = totalOps;
+
+    AnimEngine.load(steps);
+    Status.set(`Ejecutando: ${opName}`, true);
+    AnimEngine.play();
+    refreshStats();
+    AVLCanvas.redraw();
+  }
+
+  function getInsertVal() {
+    const v = parseInt(document.getElementById('insert-val').value);
+    return isNaN(v) ? null : Math.max(-999, Math.min(999, v));
+  }
+
+  function getSearchVal() {
+    const v = parseInt(document.getElementById('search-val').value);
+    return isNaN(v) ? null : Math.max(-999, Math.min(999, v));
+  }
+
+  /* ── INSERTAR ── */
+  document.getElementById('btn-insert').addEventListener('click', () => {
+    const val = getInsertVal();
+    if (val === null) { Logger.add('Ingresa un número válido.', ''); return; }
+    document.getElementById('insert-val').value = '';
+    const steps = AVLTree.insert(val);
+    runOperation(steps, `INSERTAR ${val}`);
+  });
+
+  document.getElementById('insert-val').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('btn-insert').click();
+  });
+
+  /* ── RANDOM ── */
+  document.getElementById('btn-insert-random').addEventListener('click', () => {
+    const val = Math.floor(Math.random() * 199) - 99; // -99 a 99
+    document.getElementById('insert-val').value = val;
+    const steps = AVLTree.insert(val);
+    runOperation(steps, `INSERTAR ${val} (aleatorio)`);
+  });
+
+  /* ── SECUENCIA ── */
+  let seqVals = [10, 20, 30, 40, 50, 25, 15];
+  let seqIdx  = 0;
+  document.getElementById('btn-insert-seq').addEventListener('click', () => {
+    if (seqIdx === 0) { AVLTree.clear(); Stats.reset(); totalRotations=0; totalOps=0; Logger.clear(); }
+    if (seqIdx >= seqVals.length) { seqIdx = 0; Logger.add('Secuencia reiniciada.'); return; }
+    const val = seqVals[seqIdx++];
+    const steps = AVLTree.insert(val);
+    runOperation(steps, `SECUENCIA: INSERTAR ${val}`);
+  });
+
+  /* ── BUSCAR ── */
+  document.getElementById('btn-search').addEventListener('click', () => {
+    const val = getSearchVal();
+    if (val === null) { Logger.add('Ingresa un número para buscar.'); return; }
+    document.getElementById('search-val').value = '';
+    const steps = AVLTree.search(val);
+    runOperation(steps, `BUSCAR ${val}`);
+  });
+
+  document.getElementById('search-val').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('btn-search').click();
+  });
+
+  /* ── ELIMINAR ── */
+  document.getElementById('btn-delete').addEventListener('click', () => {
+    const val = getSearchVal();
+    if (val === null) { Logger.add('Ingresa un número para eliminar.'); return; }
+    document.getElementById('search-val').value = '';
+    const steps = AVLTree.remove(val);
+    runOperation(steps, `ELIMINAR ${val}`);
+  });
+
+  /* ── CONTROLES DE REPRODUCCIÓN ── */
+  document.getElementById('btn-play').addEventListener('click', () => {
+    if (AnimEngine.isPlaying()) AnimEngine.pause();
+    else AnimEngine.play();
+  });
+
+  document.getElementById('btn-step-fwd').addEventListener('click', () => {
+    if (AnimEngine.isPlaying()) AnimEngine.pause();
+    AnimEngine.stepForward();
+    AVLCanvas.redraw();
+  });
+
+  document.getElementById('btn-step-back').addEventListener('click', () => {
+    AnimEngine.stepBack();
+  });
+
+  document.getElementById('btn-undo').addEventListener('click', () => {
+    AnimEngine.undo();
+  });
+
+  document.getElementById('btn-stop').addEventListener('click', () => {
+    AnimEngine.stop();
+    AVLCanvas.redraw();
+    Status.set('Animación detenida');
+  });
+
+  document.getElementById('speed-slider').addEventListener('input', (e) => {
+    const s = parseInt(e.target.value);
+    document.getElementById('speed-val').textContent = s;
+    AnimEngine.setSpeed(s);
+  });
+
+  /* ── LIMPIAR ── */
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    AnimEngine.stop();
+    AVLTree.clear();
+    Stats.reset();
+    totalRotations = 0; totalOps = 0;
+    Logger.clear();
+    Status.set('Árbol limpiado');
+    Status.setBalance(null);
+    AVLCanvas.redraw();
+  });
+
+  /* ── VERIFICAR BALANCE ── */
+  document.getElementById('btn-balance-check').addEventListener('click', () => {
+    const n = AVLTree.nodeCount();
+    if (n === 0) { Logger.add('Árbol vacío.'); return; }
+    const ok = AVLTree.isBalanced();
+    Logger.add(`Balance global: ${ok ? '✓ ÁRBOL BALANCEADO' : '✗ DESBALANCEADO (error interno)'}`,
+               ok ? 'insert' : 'rotate');
+    Status.setBalance(ok);
+  });
+
+  /* ── CENTRAR ── */
+  document.getElementById('btn-recenter').addEventListener('click', () => {
+    AVLCanvas.center();
+  });
+
+  /* ── RECORRIDOS ── */
+  document.getElementById('btn-inorder').addEventListener('click', () => {
+    const arr = AVLTree.inorder();
+    Logger.add(`InOrden: [ ${arr.join(' → ')} ]`, 'search');
+  });
+  document.getElementById('btn-preorder').addEventListener('click', () => {
+    const arr = AVLTree.preorder();
+    Logger.add(`PreOrden: [ ${arr.join(' → ')} ]`, 'search');
+  });
+  document.getElementById('btn-postorder').addEventListener('click', () => {
+    const arr = AVLTree.postorder();
+    Logger.add(`PostOrden: [ ${arr.join(' → ')} ]`, 'search');
+  });
+
+  /* ── INIT ── */
+  function init() {
+    ThemeManager.init();
+    Status.set('Listo');
+    Stats.reset();
+    Logger.add('AVL Tree Visualizer iniciado.', 'insert');
+    Logger.add('Inserta valores y observa las rotaciones.', '');
+  }
+
+  return { init };
+})();
+
+/* ─────────────────────────────────────────────────
+   PUNTO DE ENTRADA
+───────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  UIController.init();
+});
+</script>
+
+
+</body>
+</html>
